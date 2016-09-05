@@ -6,6 +6,9 @@ import hz.lt.storm.SplitSentenceBolt;
 import hz.lt.storm.WordCountBolt;
 import backtype.storm.Config;
 import backtype.storm.LocalCluster;
+import backtype.storm.StormSubmitter;
+import backtype.storm.generated.AlreadyAliveException;
+import backtype.storm.generated.InvalidTopologyException;
 import backtype.storm.topology.TopologyBuilder;
 import backtype.storm.tuple.Fields;
 import backtype.storm.utils.Utils;
@@ -22,8 +25,10 @@ public class WordCountTopology {
 	
 	/**
 	 * @param args
+	 * @throws InvalidTopologyException 
+	 * @throws AlreadyAliveException 
 	 */
-	public static void main(String[] args) {
+	public static void main(String[] args) throws AlreadyAliveException, InvalidTopologyException {
 		// TODO Auto-generated method stub
 
 		SentenceSpout spout=new SentenceSpout();
@@ -40,12 +45,21 @@ public class WordCountTopology {
 		
 		Config config=new Config();
 		config.setNumWorkers(2);
-		LocalCluster cluster=new LocalCluster();
+		if(args.length==0){
+			
+			LocalCluster cluster=new LocalCluster();
+			cluster.submitTopology(TOPOLOGY_NAME, config, builder.createTopology());
+			Utils.sleep(10000);
+			cluster.killTopology(TOPOLOGY_NAME);
+			cluster.shutdown();
+		}
+		else{
+			
+			StormSubmitter.submitTopology(args[0], config, builder.createTopology());
+		}
 		
-		cluster.submitTopology(TOPOLOGY_NAME, config, builder.createTopology());
-		Utils.sleep(10000);
-		cluster.killTopology(TOPOLOGY_NAME);
-		cluster.shutdown();
+		
+		
 	}
 
 }
